@@ -2,6 +2,9 @@ import './shims';
 import { Server } from '0SERVER';
 import { split_headers } from './headers';
 
+// @ts-ignore
+import { is_text } from '@sveltejs/kit/src/runtime/server/endpoint';
+
 /**
  * @param {import('@sveltejs/kit').SSRManifest} manifest
  * @returns {import('@netlify/functions').Handler}
@@ -22,14 +25,14 @@ export function init(manifest) {
 			...split_headers(rendered.headers)
 		};
 
-		// TODO this is probably wrong now?
-		if (rendered.body instanceof Uint8Array) {
+		if (rendered.headers.has('content-type') && is_text(rendered.headers.get('content-type'))) {
 			// Function responses should be strings (or undefined), and responses with binary
 			// content should be base64 encoded and set isBase64Encoded to true.
 			// https://github.com/netlify/functions/blob/main/src/function/response.ts
 			return {
 				...partial_response,
 				isBase64Encoded: true,
+				// @ts-ignore
 				body: Buffer.from(rendered.body).toString('base64')
 			};
 		}
